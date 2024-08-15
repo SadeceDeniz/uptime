@@ -4,7 +4,7 @@
   "description": "A simple Discord bot to check uptime for multiple URLs.",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.0.0",
