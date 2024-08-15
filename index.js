@@ -1,6 +1,10 @@
 require('dotenv').config(); // .env dosyasını yükle
 const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
+const express = require('express'); // Express'i içe aktar
+
+const app = express();
+const PORT = process.env.PORT || 3000; // Portu ayarla, .env'den veya 3000 kullan
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
@@ -16,24 +20,34 @@ const URLS_TO_CHECK = [
 const CHANNEL_ID = '1257608204423139339'; // Belirtilen kanal ID'si
 const CHECK_INTERVAL = 30000; // Kontrol aralığı (30 saniye)
 
+// Her 30 saniyede bir uptime kontrolü yap
+setInterval(async () => {
+    for (const url of URLS_TO_CHECK) {
+        try {
+            const response = await axios.get(url);
+            if (response.status === 200) {
+                const channel = await client.channels.fetch(CHANNEL_ID);
+                channel.send(`✅ ${url} çalışıyor!`);
+            }
+        } catch (error) {
+            const channel = await client.channels.fetch(CHANNEL_ID);
+            channel.send(`❌ ${url} çalışmıyor!`);
+        }
+    }
+}, CHECK_INTERVAL);
+
+// Express sunucusu
+app.get('/', (req, res) => {
+    res.send('Uptime botu çalışıyor!');
+});
+
+// Sunucuyu dinlemeye başla
+app.listen(PORT, () => {
+    console.log(`HTTP sunucusu ${PORT} portunda dinleniyor...`);
+});
+
 client.once('ready', () => {
     console.log(`Bot ${client.user.tag} olarak giriş yaptı!`);
-
-    // Her 30 saniyede bir uptime kontrolü yap
-    setInterval(async () => {
-        for (const url of URLS_TO_CHECK) {
-            try {
-                const response = await axios.get(url);
-                if (response.status === 200) {
-                    const channel = await client.channels.fetch(CHANNEL_ID);
-                    channel.send(`✅ ${url} çalışıyor!`);
-                }
-            } catch (error) {
-                const channel = await client.channels.fetch(CHANNEL_ID);
-                channel.send(`❌ ${url} çalışmıyor!`);
-            }
-        }
-    }, CHECK_INTERVAL);
 });
 
 client.on('messageCreate', async (message) => {
