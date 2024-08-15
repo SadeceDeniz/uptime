@@ -14,7 +14,7 @@ const URLS_TO_CHECK = [
     'https://akeno-n3cn.onrender.com/',
     'https://riasa.onrender.com/',
     'https://tokumeihgbotu-1.onrender.com',  // Yeni link 1
-    'https://yeni-link2.com/'   // Yeni link 2
+    'https://sayanbot-w4wi.onrender.com'   // Yeni link 2
 ];
 
 const CHANNEL_ID = '1257608204423139339'; // Belirtilen kanal ID'si
