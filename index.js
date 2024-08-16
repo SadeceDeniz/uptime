@@ -3,12 +3,25 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
+
+// HTTP sunucusunu başlat
+const app = express();
+const port = process.env.PORT || 3000; // Portu çevre değişkenlerinden veya varsayılan olarak 3000'den al
+
+app.get('/', (req, res) => {
+  res.send('Bot çalışıyor!');
+});
+
+app.listen(port, () => {
+  console.log(`Sunucu http://localhost:${port} adresinde çalışıyor`);
+});
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
 const URLS_FILE_PATH = path.join(__dirname, 'urls.json');
 const CHECK_INTERVAL = 30000; // 30 saniye
-const CHANNEL_ID = '1257608204423139339';
+const CHANNEL_ID = '1257608204423139339'; // Log kanalınızın ID'sini buraya ekleyin
 
 // URL'leri JSON dosyasından oku
 const getUrls = () => {
@@ -31,6 +44,7 @@ const saveUrls = (urls) => {
     }
 };
 
+// URL'leri kontrol etme
 const URLS_TO_CHECK = getUrls();
 
 setInterval(async () => {
