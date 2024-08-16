@@ -1,26 +1,38 @@
-require('dotenv').config(); // .env dosyasını yükle
+require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
-const express = require('express'); // Express'i içe aktar
-
-const app = express();
-const PORT = process.env.PORT || 3000; // Portu ayarla, .env'den veya 3000 kullan
+const fs = require('fs');
+const path = require('path');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
-// Kontrol edilecek URL'ler
-const URLS_TO_CHECK = [
-    process.env.URL_TO_CHECK, // .env dosyasından alınan URL
-    'https://akeno-n3cn.onrender.com/',
-    'https://riasa.onrender.com/',
-    'https://tokumeihgbotu-1.onrender.com',  // Yeni link 1
-    'https://sayanbot-w4wi.onrender.com'   // Yeni link 2
-];
+const URLS_FILE_PATH = path.join(__dirname, 'urls.json');
+const CHECK_INTERVAL = 30000; // 30 saniye
+const CHANNEL_ID = '1257608204423139339';
 
-const CHANNEL_ID = '1257608204423139339'; // Belirtilen kanal ID'si
-const CHECK_INTERVAL = 30000; // Kontrol aralığı (30 saniye)
+// URL'leri JSON dosyasından oku
+const getUrls = () => {
+    try {
+        const data = fs.readFileSync(URLS_FILE_PATH);
+        const json = JSON.parse(data);
+        return json.urls || [];
+    } catch (err) {
+        console.error('Error reading URLs file:', err);
+        return [];
+    }
+};
 
-// Her 30 saniyede bir uptime kontrolü yap
+// URL'leri JSON dosyasına yaz
+const saveUrls = (urls) => {
+    try {
+        fs.writeFileSync(URLS_FILE_PATH, JSON.stringify({ urls }, null, 2));
+    } catch (err) {
+        console.error('Error writing URLs file:', err);
+    }
+};
+
+const URLS_TO_CHECK = getUrls();
+
 setInterval(async () => {
     for (const url of URLS_TO_CHECK) {
         try {
@@ -36,33 +48,47 @@ setInterval(async () => {
     }
 }, CHECK_INTERVAL);
 
-// Express sunucusu
-app.get('/', (req, res) => {
-    res.send('Uptime botu çalışıyor!');
-});
-
-// Sunucuyu dinlemeye başla
-app.listen(PORT, () => {
-    console.log(`HTTP sunucusu ${PORT} portunda dinleniyor...`);
-});
-
 client.once('ready', () => {
     console.log(`Bot ${client.user.tag} olarak giriş yaptı!`);
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.content === '!uptime') {
-        for (const url of URLS_TO_CHECK) {
-            try {
-                const response = await axios.get(url);
-                if (response.status === 200) {
-                    message.channel.send(`✅ ${url} çalışıyor!`);
-                }
-            } catch (error) {
-                message.channel.send(`❌ ${url} çalışmıyor!`);
-            }
+    if (message.content.startsWith('A!linkekle ')) {
+        const newUrl = message.content.replace('A!linkekle ', '').trim();
+        if (!newUrl) {
+            message.channel.send('Lütfen geçerli bir URL girin.');
+            return;
+        }
+
+        // URL'yi ekle
+        const urls = getUrls();
+        if (!urls.includes(newUrl)) {
+            urls.push(newUrl);
+            saveUrls(urls);
+            message.channel.send(`URL başarıyla eklendi: ${newUrl}`);
+        } else {
+            message.channel.send('Bu URL zaten listede.');
+        }
+    }
+
+    if (message.content.startsWith('A!linksil ')) {
+        const urlToRemove = message.content.replace('A!linksil ', '').trim();
+        if (!urlToRemove) {
+            message.channel.send('Lütfen geçerli bir URL girin.');
+            return;
+        }
+
+        // URL'yi sil
+        let urls = getUrls();
+        const urlIndex = urls.indexOf(urlToRemove);
+        if (urlIndex !== -1) {
+            urls.splice(urlIndex, 1);
+            saveUrls(urls);
+            message.channel.send(`URL başarıyla silindi: ${urlToRemove}`);
+        } else {
+            message.channel.send('Bu URL listede bulunmuyor.');
         }
     }
 });
 
-client.login(process.env.BOT_TOKEN); // .env dosyasından bot tokenini al
+client.login(process.env.BOT_TOKEN);
