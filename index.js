@@ -67,6 +67,8 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
+     if (message.author.bot) return; // Botun kendine cevap vermesini önleyin
+
     if (message.content.startsWith('A!linkekle ')) {
         const newUrl = message.content.replace('A!linkekle ', '').trim();
         if (!newUrl) {
@@ -74,6 +76,7 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
+        console.log(`Adding URL: ${newUrl}`); // Debug mesajı
         // URL'yi ekle
         const urls = getUrls();
         if (!urls.includes(newUrl)) {
@@ -92,6 +95,7 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
+        console.log(`Removing URL: ${urlToRemove}`); // Debug mesajı
         // URL'yi sil
         let urls = getUrls();
         const urlIndex = urls.indexOf(urlToRemove);
