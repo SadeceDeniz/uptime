@@ -1,14 +1,19 @@
 {
-  "name": "express-app",
+  "name": "my-discord-bot", // Projenizin ismi
   "version": "1.0.0",
-  "description": "Express ile basit bir web uygulaması",
-  "main": "index.js",
+  "description": "A Discord bot that visits a specific link and joins a voice channel",
+  "main": "index.js", // Ana dosyanızın adı
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": ["discord", "bot", "express", "axios"],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2"
-  },
-  "author": "",
-  "license": "ISC"
+    "discord.js-selfbot-v13": "^1.x.x", // Sizin kullandığınız versiyonu girin
+    "express": "^4.18.2",
+    "dotenv": "^16.0.3",
+    "axios": "^1.3.4",
+    "@discordjs/voice": "^0.17.0"
+  }
 }
