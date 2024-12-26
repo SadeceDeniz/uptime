@@ -16,18 +16,20 @@ const guildID = process.env.GUILD_ID;
 const channelID = process.env.CHANNEL_ID;
 const interval = 30000; // 30 saniye
 
+
+app.get('/', (req, res) => {
+    res.send('Bot çalışıyor!');
+});
+
+app.listen(port, () => {
+    console.log(`Sunucu http://localhost:${port} adresinde çalışıyor.`);
+});
+
+
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     
     await joinVC(client, token, guildID, channelID); // Ses kanalına bağlan
-});
-
-app.get('/hello', (req, res) => {
-  res.send('Merhaba, dünya!');
-});
-
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
 });
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
