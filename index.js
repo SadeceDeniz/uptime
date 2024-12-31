@@ -1,86 +1,51 @@
-const express = require('express');
 const { Client } = require('discord.js-selfbot-v13');
-const { joinVoiceChannel } = require('@discordjs/voice');
-require('dotenv').config();
-const axios = require('axios');
+const { joinVoiceChannel, VoiceConnectionStatus } = require('@discordjs/voice');
 
-const app = express();
-const port = 3000; // Dinlenecek port
+// Self-bot tokeni ve ses kanalı ID'sini buraya ekleyin
+const selfbotToken = 'token'; // Self-bot tokeninizi buraya ekleyin
+const channelId = 'channel'; // Bağlanılacak ana ses kanalı ID'si
+const checkChannelId = 'id'; // Kullanıcının girip çıkması kontrol edilecek kanal ID'si
 
-// Client'ı başlatıyoruz
-const client = new Client({ checkUpdate: false });
+const selfbot = new Client();
 
-// Değişkenleri .env dosyasından alıyoruz
-const token = process.env.TOKEN;
-const guildID = process.env.GUILD_ID;
-const channelID = process.env.CHANNEL_ID;
-const interval = 30000; // 30 saniye
-
-
-app.get('/', (req, res) => {
-    res.send('Bot çalışıyor!');
-});
-
-app.listen(port, () => {
-    console.log(`Sunucu http://localhost:${port} adresinde çalışıyor.`);
-});
-
-
-client.on('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    
-    await joinVC(client, token, guildID, channelID); // Ses kanalına bağlan
-});
-
-client.on('voiceStateUpdate', async (oldState, newState) => {
-    const oldVoice = oldState.channelId;
-    const newVoice = newState.channelId;
-
-    if (oldVoice !== newVoice) {
-        if (!oldVoice) {
-            // eski ses kanalından çıkmışsa
-        } else if (!newVoice) {
-            if (oldState.member.id !== client.user.id) return;
-            await joinVC(client, token, guildID, channelID); // Ses kanalına yeniden bağlan
-        } else {
-            if (oldState.member.id !== client.user.id) return;
-            if (newVoice !== channelID) {
-                await joinVC(client, token, guildID, channelID); // Hedef ses kanalına bağlan
-            }
-        }
-    }
+selfbot.once('ready', async () => {
+    await joinChannel(); // Ses kanalına bağlan
 });
 
 // Ses kanalına bağlanma fonksiyonu
-async function joinVC(client, token, guildID, channelID) {
-    const guild = client.guilds.cache.get(guildID);
-    const voiceChannel = guild.channels.cache.get(channelID);
+async function joinChannel() {
+    const guild = selfbot.guilds.cache.find(g => g.channels.cache.has(channelId)); // Kanala göre sunucuyu bul
+    if (!guild) return;
 
-    if (!voiceChannel || !voiceChannel.isVoice()) {
-        console.log('Geçerli bir ses kanalı bulunamadı!');
-        return;
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel) return;
+
+    if (channel.type === 'GUILD_VOICE') {
+        try {
+            const connection = joinVoiceChannel({
+                channelId: channel.id,
+                guildId: guild.id,
+                adapterCreator: guild.voiceAdapterCreator,
+                selfDeaf: false,
+                selfMute: false,
+            });
+
+            connection.on(VoiceConnectionStatus.Disconnected, async () => {
+                await joinChannel(); // Yeniden bağlan
+            });
+        } catch (error) {
+            // Hata yakalama
+        }
     }
-
-    const connection = joinVoiceChannel({
-        channelId: voiceChannel.id,
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: false,
-        selfMute: true
-    });
-
-    console.log('Ses kanalına bağlanıldı!');
 }
 
-async function visitLink(link) {
-  try {
-    const response = await axios.get(link);
-    console.log(`Link ${link} başarıyla ziyaret edildi.`);
-  } catch (error) {
-    console.error(`Hata oluştu: ${error.message}`);
-  }
-}
+// Kullanıcının ses kanalına giriş/çıkış durumunu kontrol et
+selfbot.on('voiceStateUpdate', async (oldState, newState) => {
+    // Kullanıcı checkChannelId kanalına girerse, belirtilen channelId'ye dön
+    if (newState.channelId === checkChannelId) {
+        await joinChannel(); // Ana kanala geri dön
+    }
+});
 
-setInterval(() => visitLink(process.env.LINK), interval);
-
-client.login(token);
+// Self-botu başlat
+selfbot.login(selfbotToken).catch(() => {});
